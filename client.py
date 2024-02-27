@@ -8,8 +8,8 @@ import time
 import io
 import json
 import base64
-from animeinfos import animeinfolist
-from animeinfos import anime_root_path
+# from animeinfos import animeinfolist
+from animeinfos import anime_root_path, animeinfolist, get_cover_path_by_anime_title
 
 
 script_path = os.path.dirname(os.path.abspath(__file__))
@@ -19,7 +19,7 @@ file_root_path = 'F:\\'
 url = 'http://localhost:20000/9000'
 
 # url = 'http://localhost:8080/download'
-url = 'http://107.174.67.157:20001/9000'
+# url = 'http://107.174.67.157:22225/9000'
 # url = 'http://107.174.67.157:20001/9000'
 
 
@@ -81,7 +81,7 @@ def parse_range_header(range_header, file_size):
 
     # 处理空字符串的情况，使用默认值
     start = int(start_str) if start_str else 0
-    end = int(end_str) if end_str else min( start + 1024*256 - 1, file_size)
+    end = int(end_str) if end_str else min( start + 1024*512 - 1, file_size)
 
     return start, end
 
@@ -102,6 +102,14 @@ async def receive_from_server(ws, msg):
             except:
                 content = {'Type': 'folder', 'Infos': folder_info_list, 'Status':'0'}
                 await ws.send_json(content)
+        elif (msg['Type'] == 'chapters'):
+            anime_title = msg['Title']
+            UUID = msg['UUID']
+            episodes = animeinfolist.get_anime_episode_titles(anime_title)
+            msg = {'Type': 'chapters','UUID': UUID, 'chapters': episodes}
+            print('send_chapters')
+            print(msg)
+            await ws.send_json(msg)
         elif (msg['Type'] == 'file'):
 
             UUID = msg['UUID']
@@ -110,9 +118,13 @@ async def receive_from_server(ws, msg):
                 await send_file(abs_file_name, ws, UUID)
 
             elif(msg['FileType'] == 'cover'):
+                # 传来msg['Path']是anime的title，通过title获取cover的路径，然后用send_file传输回去
                 abs_file_name = os.path.join(anime_root_path, msg['Path'])
-                abs_file_name = os.path.join(abs_file_name, 'cover.jpg')                
-                await send_file(abs_file_name, ws, UUID)
+                abs_file_name = os.path.join(abs_file_name, 'cover.jpg') 
+                abs_file_path = get_cover_path_by_anime_title(msg['Path'])  
+
+                await send_file(abs_file_path, ws, UUID)
+                # await send_file(abs_file_name, ws, UUID)
 
             elif(msg['FileType'] == 'video'):
                 # print('video')
