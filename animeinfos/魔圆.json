@@ -1,9 +1,29 @@
 {
     "title": "\u9b54\u5706",
-    "episodes": [
+    "episode_list": [
         {
             "episode_title": "1",
-            "episode_path_textbox": "F:/web/anime/\u9b54\u5706/1.mp4"
+            "episode_path_textbox": "F:/anime/\u9b54\u5706/1.mp4"
+        },
+        {
+            "episode_title": "2",
+            "episode_path_textbox": "F:/anime/\u9b54\u5706/2.mp4"
+        },
+        {
+            "episode_title": "3",
+            "episode_path_textbox": "F:/anime/\u9b54\u5706/3.mp4"
+        },
+        {
+            "episode_title": "4",
+            "episode_path_textbox": "F:/anime/\u9b54\u5706/4.mp4"
+        },
+        {
+            "episode_title": "ttt",
+            "episode_path_textbox": "D:/anime/hositsuku/1.mp4"
+        },
+        {
+            "episode_title": "123",
+            "episode_path_textbox": "C:/Users/AAO/Videos/123.mp4"
         }
     ]
 }

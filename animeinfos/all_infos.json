@@ -1,8 +1,16 @@
 {
     "all_info_list": [
         {
+            "anime_title": "test",
+            "cover": "C:/Users/AAO/Pictures/111.png"
+        },
+        {
             "anime_title": "\u9b54\u5706",
             "cover": "F:\\\\web\\anime\\\u9b54\u5706\\cover.jpg"
+        },
+        {
+            "anime_title": "mygo",
+            "cover": "C:/Users/AAO/Pictures/Screenshots/\u5c4f\u5e55\u622a\u56fe(23).png"
         }
     ]
 }

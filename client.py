@@ -9,7 +9,7 @@ import io
 import json
 import base64
 # from animeinfos import animeinfolist
-from animeinfos import anime_root_path, animeinfolist, get_cover_path_by_anime_title
+from animeinfos import anime_root_path, animeinfolist, get_cover_path_by_anime_title, get_episode_by_title_episode_title
 
 
 script_path = os.path.dirname(os.path.abspath(__file__))
@@ -21,6 +21,8 @@ url = 'http://localhost:20000/9000'
 # url = 'http://localhost:8080/download'
 # url = 'http://107.174.67.157:22225/9000'
 # url = 'http://107.174.67.157:20001/9000'
+url = 'http://localhost:8000/ws/chat/'
+
 
 
 async def send_file_chunk(ws, msg):
@@ -28,13 +30,21 @@ async def send_file_chunk(ws, msg):
     await ws.send_json(msg)
 
 
-async def send_file(filename, ws, UUID):
+def convert_size(size_bytes):
+    GB = size_bytes / (1024 ** 3)
+    MB = (size_bytes % (1024 ** 3)) / (1024 ** 2)
+    KB = (size_bytes % (1024 ** 2)) / 1024
+    return f"{int(GB)}GB {int(MB)}MB {int(KB)}KB"
 
-    CHUNK_SIZE = 1024  # 每块的大小
+async def send_file(filename, ws, UUID):
+    print('send_file---start')
+
+    CHUNK_SIZE = 1024*1024  # 每块的大小
 
     with open(filename, 'rb') as file:
         current_size = 0
         size = get_file_size(filename)
+      
         while True:
             chunk = file.read(CHUNK_SIZE)
 
@@ -66,28 +76,23 @@ async def send_file(filename, ws, UUID):
 
 
 async def send_all_anime_title(ws):
-    msg = {'Type': 'title', 'titles': animeinfolist().get_all_anime_title()}
-    print('over')
+    msg = {'Type': 'title', 'titles': animeinfolist().get_anime_titles()}
+    print('send_all_anime_title_over')
     await ws.send_json(msg)
 
 
-async def send_all_anime_cover():
-    pass
-
 def parse_range_header(range_header, file_size):
-    # print(range_header)
-    _, range_values = range_header.split('=')
-    start_str, end_str = range_values.split('-')
 
-    # 处理空字符串的情况，使用默认值
-    start = int(start_str) if start_str else 0
-    end = int(end_str) if end_str else min( start + 1024*512 - 1, file_size)
+    start_range, end_range = range_header.split('=')[1].split('-')
+    start_range = int(start_range)
+    end_range = int(end_range) if end_range else min(start_range + 1024*1024,file_size - 1)
+    content_length = end_range - start_range + 1
 
-    return start, end
+    return start_range, end_range, content_length
 
 async def receive_from_server(ws, msg):
     try:
-        print(msg['Type'])
+        print('msg  ===  '+ str(msg))
         if (msg['Type'] == 'folder'):
             try:
                     
@@ -98,17 +103,18 @@ async def receive_from_server(ws, msg):
                 content = {'Type': 'folder', 'Infos': folder_info_list, 'Status':'1'}
                 await ws.send_json(content)
                 print('发送路径内容完成：'+folder_path)
-                print(folder_info_list)
+                # print(folder_info_list)
             except:
                 content = {'Type': 'folder', 'Infos': folder_info_list, 'Status':'0'}
                 await ws.send_json(content)
-        elif (msg['Type'] == 'chapters'):
+        elif (msg['Type'] == 'episode_titles'):
+            print('get_anime_episode_titles')
             anime_title = msg['Title']
             UUID = msg['UUID']
             episodes = animeinfolist.get_anime_episode_titles(anime_title)
-            msg = {'Type': 'chapters','UUID': UUID, 'chapters': episodes}
-            print('send_chapters')
-            print(msg)
+            msg = {'Type': 'episode_titles','UUID': UUID, 'episode_title_list': episodes}
+            print('episode_titles')
+            # print(msg)
             await ws.send_json(msg)
         elif (msg['Type'] == 'file'):
 
@@ -119,9 +125,9 @@ async def receive_from_server(ws, msg):
 
             elif(msg['FileType'] == 'cover'):
                 # 传来msg['Path']是anime的title，通过title获取cover的路径，然后用send_file传输回去
-                abs_file_name = os.path.join(anime_root_path, msg['Path'])
+                abs_file_name = os.path.join(anime_root_path, msg['Title'])
                 abs_file_name = os.path.join(abs_file_name, 'cover.jpg') 
-                abs_file_path = get_cover_path_by_anime_title(msg['Path'])  
+                abs_file_path = get_cover_path_by_anime_title(msg['Title'])  
 
                 await send_file(abs_file_path, ws, UUID)
                 # await send_file(abs_file_name, ws, UUID)
@@ -132,34 +138,27 @@ async def receive_from_server(ws, msg):
                 UUID = data['UUID']
                 range = data['Range']
                 title = data['Title']
-                chapter = data['Chapter']
-                # print(msg['Data'])
-                # path = 'E:\\web\\anime\\111.mp4'  # Set the correct path to your video file
-                path = 'E:\\web\\myweb\\files\\bule bird\\2222.mp4' 
-                path = anime_root_path + title + '\\' + chapter 
-                print(path)
+                episode = data['Episode']
+                print(f'准备发送range资源{range}')
+
+                path = get_episode_by_title_episode_title(title,episode)
                 file_size = os.path.getsize(path)
-                
                 if range:
-                    start, end = parse_range_header(range, file_size)
-                    request_size = end - start + 1
+                    start, end, content_length = parse_range_header(range, file_size)
 
                 with open(path, 'rb') as file:
-                    print('open')
                     file.seek(start)
-                    chunk = file.read(request_size)
-                        # await response.write(data)
-                        # request_size -= chunk_size
-                # print(request_size)
+                    chunk = file.read(content_length)
+ 
                 chunk = base64.b64encode(chunk)
                 # 字符串化，使用utf-8的方式解析二进制
                 chunk = str(chunk, 'utf-8')
-                data = {'file_size': file_size,'start': start, 'end': end, 'request_size': request_size,'chunk': chunk}
-                # data = {'file_size': file_size,'start': start, 'end': end, 'request_size': request_size}
+                # print(convert_size(file_size))
+                data = {'file_size': file_size,'start': start, 'end': end, 'content_length': content_length,'chunk': chunk}
                 msg = {'Type': 'file', 'UUID': UUID, 'Data': data}
-                # print(msg)
-                # print(1)
-                print(file_size)
+  
+                # print(file_size)
+                print(f'发送range资源{range}完毕')
                 await send_file_chunk(ws, msg)
 
         elif (msg['Type'] == 'animeinfo'):

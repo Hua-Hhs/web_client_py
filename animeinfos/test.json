@@ -1,0 +1,25 @@
+{
+    "title": "test",
+    "episode_list": [
+        {
+            "episode_title": "1",
+            "episode_path_textbox": "F:/anime/\u9b54\u5706/\u6c38\u8fdc\u7684\u7269\u8bed.mp4"
+        },
+        {
+            "episode_title": "2",
+            "episode_path_textbox": "F:/anime/\u9b54\u5706/\u53db\u9006\u7684\u7269\u8bed.mp4"
+        },
+        {
+            "episode_title": "3",
+            "episode_path_textbox": "F:/anime/\u9b54\u5706/\u521d\u59cb\u7684\u7269\u8bed.mp4"
+        },
+        {
+            "episode_title": "rrr",
+            "episode_path_textbox": "C:/Users/AAO/Videos/1234.mp4"
+        },
+        {
+            "episode_title": "123",
+            "episode_path_textbox": "C:/Users/AAO/Videos/123.mp4"
+        }
+    ]
+}
